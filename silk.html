@@ -143,56 +143,65 @@
 
   return imgPath.startsWith('http') ? imgPath : `${STRAPI_URL}${imgPath}`;
 }
-// ฟังก์ชันดึงข้อมูลจาก Strapi
+// ประกาศคีย์ไว้ด้านบนฟังก์ชัน (เปลี่ยนเป็นคีย์ของคุณเอง)
+const SUPABASE_URL = 'https://kclbymrasxwonebprhcz.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_wN7UxK0ylSCP-sW-jO8NpA_0wZkjDN6';
+
+// ฟังก์ชันดึงข้อมูลจาก Supabase
 async function loadSilks() {
-      try {
-        const response = await fetch(`${STRAPI_URL}/api/silks?populate[pattern_images][populate]=*&populate[sub_patterns][populate][pattern_images][populate]=*`,{
-    
-});
-        const result = await response.json();        
-        const container = document.getElementById('silk-list');
-        container.innerHTML = '';
+  try {
+    const response = await fetch(`${SUPABASE_URL}/rest/v1/silks?select=*`, {
+      headers: {
+        'apikey': SUPABASE_KEY,
+        'Authorization': `Bearer ${SUPABASE_KEY}`
+      }
+    });
 
-        if (!result.data || result.data.length === 0) {
-          container.innerHTML = '<p class="text-center text-muted py-5">ยังไม่มีข้อมูลผ้าไหมในระบบ</p>';
-          return;
-        }
+    const result = await response.json();
+    const container = document.getElementById('silk-list');
+    container.innerHTML = '';
 
-        silksData = result.data; // บันทึกข้อมูลลงตัวแปรไว้เปิด Pop-up
+    // เช็กว่ามีข้อมูลไหม (Supabase คืนค่าเป็น Array ตรงๆ)
+    if (!result || result.length === 0) {
+      container.innerHTML = '<p class="text-center text-muted py-5">ยังไม่มีข้อมูลผ้าไหมในระบบ</p>';
+      return;
+    }
 
-        result.data.forEach((item, index) => {
-          const imageUrl = getImageUrl(item);
+    silksData = result; // บันทึกข้อมูลลงตัวแปรไว้เปิด Pop-up
 
-          // แสดงการ์ดแบบคลีนๆ มีปุ่มเปิด Pop-up
-          container.innerHTML += `
-            <div class="col-12 col-md-6 col-lg-4">
-              <div class="card h-100 shadow-sm border-0 custom-card">
-                <img src="${imageUrl}" class="card-img-top" alt="${item.title || item.attributes?.title || 'ผ้าไหม'}">
-                <div class="card-body d-flex flex-column">
-                  <div class="mb-2">
-                    <span class="badge bg-primary mb-2">${item.category || item.attributes?.category || 'ผ้าไหม'}</span>
-                    <h5 class="card-title fw-bold text-dark">${item.title || item.attributes?.title || 'ไม่มีชื่อ'}</h5>
-                  </div>
-                  <div class="mt-auto pt-3">
-                    <button class="btn btn-outline-primary btn-sm w-100 rounded-pill" onclick="openSilkModal(${index})">
-                      <i class="bi bi-eye me-1"></i> ดูรายละเอียดเพิ่มเติม
-                    </button>
-                  </div>
-                </div>
+    result.forEach((item, index) => {
+      const imageUrl = getImageUrl(item);
+
+      // แสดงการ์ด
+      container.innerHTML += `
+        <div class="col-12 col-md-6 col-lg-4">
+          <div class="card h-100 shadow-sm border-0 custom-card">
+            <img src="${imageUrl}" class="card-img-top" alt="${item.title || 'ผ้าไหม'}">
+            <div class="card-body d-flex flex-column">
+              <div class="mb-2">
+                <span class="badge bg-primary mb-2">${item.main_category || item.category || 'ผ้าไหม'}</span>
+                <h5 class="card-title fw-bold text-dark">${item.title || 'ไม่มีชื่อ'}</h5>
+              </div>
+              <div class="mt-auto pt-3">
+                <button class="btn btn-outline-primary btn-sm w-100 rounded-pill" onclick="openSilkModal(${index})">
+                  <i class="bi bi-eye me-1"></i> ดูรายละเอียดเพิ่มเติม
+                </button>
               </div>
             </div>
-          `;
-        });
-      } catch (error) {
-        console.error('Error:', error);
-        document.getElementById('silk-list').innerHTML = `
-          <div class="text-center text-danger py-5">
-            <i class="bi bi-exclamation-triangle display-4"></i>
-            <p class="mt-2">ไม่สามารถเชื่อมต่อระบบหลังบ้านได้ (อย่าลืมเปิดรันเซิร์ฟเวอร์ Strapi นะครับ)</p>
           </div>
-        `;
-      }
-    }
+        </div>
+      `;
+    });
+  } catch (error) {
+    console.error('Error:', error);
+    document.getElementById('silk-list').innerHTML = `
+      <div class="text-center text-danger py-5">
+        <i class="bi bi-exclamation-triangle display-4"></i>
+        <p class="mt-2">ไม่สามารถเชื่อมต่อระบบหลังบ้านได้</p>
+      </div>
+    `;
+  }
+}
 
    // ฟังก์ชันยัดข้อมูลลง Pop-up แล้วสั่งให้เด้งขึ้นมา
    function openSilkModal(index) {
